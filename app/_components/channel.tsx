@@ -1,28 +1,29 @@
 "use client"
 import { useContext } from "react"
 import { ChannelContext } from "../_contexts/channel-context";
+import { ChannelState } from "../page";
 
 interface IChannelProps {
-  name: string;
+  state: ChannelState;
   onClick: Function
 }
 
-export default function Channel({ name, onClick } : IChannelProps) {
+export default function Channel({ state, onClick } : IChannelProps) {
   const chosenChannel = useContext(ChannelContext); 
   
-  if (name === chosenChannel) {
+  if (state.name === chosenChannel.name) {
     return <div 
-              key={name} 
+              key={state.name} 
               className="font-mono bg-zinc-400 text-black" 
-              onClick={() => onClick(name)}>
-              <div className="inline p-2 font-mono text-xl">#</div>{name}
+              onClick={() => onClick(state)}>
+              <div className="inline p-2 font-mono text-xl">#</div>{state.name}
             </div>
   } else {
     return <div 
-              key={name} 
+              key={state.name} 
               className="font-mono hover:bg-zinc-300 text-zinc-500" 
-              onClick={() => onClick(name)}>
-              <div className="inline p-2 font-mono text-xl">#</div>{name}
+              onClick={() => onClick(state)}>
+              <div className="inline p-2 font-mono text-xl">#</div>{state.name}
             </div>  
   }
 }
