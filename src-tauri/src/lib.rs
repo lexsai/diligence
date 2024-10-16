@@ -23,7 +23,7 @@ impl Serialize for Message {
       let mut s = serializer.serialize_struct("Message", 3)?;
       s.serialize_field("content", &self.content)?;
       s.serialize_field("channel", &self.channel)?;
-      s.serialize_field("time_sent", &self.time_sent)?;
+      s.serialize_field("timeSent", &self.time_sent)?;
       s.end()
   }
 }
@@ -34,13 +34,13 @@ fn test_command(message: String) {
 }
 
 #[tauri::command]
-fn write_command(channel: String, time_sent: i64, message: String, db: tauri::State<Database>) {
-  println!("message written to channel {}: \"{}\" ", channel, message);
+fn write_command(channel: String, time_sent: i64, content: String, db: tauri::State<Database>) {
+  println!("message written to channel {}: \"{}\" ", channel, content);
   
   let db = db.lock().unwrap();
   db.conn.execute(
     "insert into messages (channel, time_sent, content) values (?1, ?2, ?3)", 
-    &[&channel, &time_sent.to_string(), &message]
+    &[&channel, &time_sent.to_string(), &content]
   ).unwrap();
 }
 

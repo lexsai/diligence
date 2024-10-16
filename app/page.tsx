@@ -1,12 +1,12 @@
 "use client"
-import { KeyboardEvent, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { invoke } from '@tauri-apps/api/core';
 import { ChannelContext } from "./_contexts/channel-context";
 import Channel from "./_components/channel";
 
 interface Message {
   channel: string,
-  time_sent: number,
+  timeSent: number,
   content: string,
 }
 
@@ -30,12 +30,19 @@ export default function Home() {
       hasSynced: false
     }
   ]);
-
   const [chosenChannel, setChosenChannel] = useState(channels[0]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null!);
+
+  useEffect(() => {
+    invoke("history_command", { channel: chosenChannel.name }).then(
+      // @ts-ignore
+      (results: Message[]) => {
+        setMessages(results);
+      }
+    );
+  }, [chosenChannel])
 
   function handleKeyDown(event: KeyboardEvent) {
     if (event.key === "Enter") {
@@ -44,32 +51,29 @@ export default function Home() {
       invoke("write_command", { 
         channel: chosenChannel.name,
         timeSent: Date.now(),
-        message: messageContent,
+        content: messageContent,
+      }).then(() => {
+        invoke("history_command", { channel: chosenChannel.name }).then(
+          // @ts-ignore
+          (results: Message[]) => {
+            setMessages(results);
+          }
+        );
       });
 
-      const newMessage: Message = { channel: chosenChannel.name, time_sent: Date.now(), content: messageContent };
-      setMessages([...messages, newMessage]);
-      setCurrentMessages([...currentMessages, newMessage]);
       inputRef.current.value = "";
     }
   }
   
   function handleChannelClick(newChannel: ChannelState) {
     setChosenChannel(newChannel);
-
-    console.log("hmm", newChannel);
-
-    if (!newChannel.hasSynced) {
+    invoke("history_command", { channel: newChannel.name }).then(
       // @ts-ignore
-      invoke("history_command", { channel: newChannel.name }).then((results: Message[]) => {
-        console.log(results)
-        newChannel.hasSynced = true;
-        setMessages([...messages, ...results]);
-        setCurrentMessages(results);
-      });
-    } else {    
-      setCurrentMessages(messages.filter(m => m.channel === newChannel.name));
-    }
+      (results: Message[]) => {
+        setMessages(results);
+        console.log(results);
+      }
+    );
   }
 
   return (
@@ -87,8 +91,8 @@ export default function Home() {
             <div className="inline p-2 font-mono text-xl">#</div>{chosenChannel.name}
           </div>
           <div className="flex-1 h-3xl mx-5 overflow-y-scroll">
-            {currentMessages.map(function(message, _i){
-              return <div key={message.content + message.time_sent} className="font-mono bg-zinc-100 max-w-3xl p-2 m-2">{message.content}</div>
+            {messages.map(function(message, _i){
+              return <div key={message.content + message.timeSent} className="font-mono bg-zinc-100 max-w-3xl p-2 m-2">{message.content}</div>
             })}
           </div>
           <div className="flex-none mx-5">
